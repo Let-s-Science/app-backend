@@ -1,0 +1,26 @@
+[package]
+name = "letsscience-backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+argon2 = { version = "0.4.1", features = ["zeroize", "parallel"] }
+chrono = { version = "0.4.23", features = ["serde"] }
+derivative = "2.2.0"
+opentelemetry = { version = "0.18.0", features = ["rt-tokio", "metrics"] }
+opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio", "collector_client", "hyper_tls_collector_client"] }
+password-hash = { version = "0.4.2", features = ["std"] }
+poem = { version = "1.3.50", features = ["rustls", "csrf", "cookie", "session", "opentelemetry", "prometheus"] }
+poem-dbsession = { version = "0.3.50", features = ["sqlx", "sqlx-postgres-rustls"] }
+poem-openapi = { version = "2.0.21", features = ["chrono", "redoc", "rapidoc", "email", "uuid"] }
+serde = { version = "1.0.152", features = ["derive"] }
+sqlx = { version = "0.6.2", features = ["postgres", "uuid", "tls", "runtime-tokio-rustls", "offline", "chrono", "migrate", "macros"] }
+thiserror = "1.0.38"
+tokio = { version = "1.24.1", features = ["full"] }
+tracing = "0.1.37"
+tracing-opentelemetry = { version = "0.18.0", features = ["thiserror"] }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot", "json"] }
+unicode-normalization = "0.1.22"
+uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }
