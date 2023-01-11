@@ -1,10 +1,12 @@
 use opentelemetry::global;
 use poem::{endpoint::PrometheusExporter, listener::TcpListener, EndpointExt, Server};
+use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, Registry};
 
 pub mod core;
-mod middleware;
+pub mod middleware;
 pub mod routes;
+pub mod security;
 
 fn init_tracer() {
     if std::env::var_os("RUST_LOG").is_none() {
@@ -33,8 +35,13 @@ fn init_tracer() {
 async fn main() -> Result<(), std::io::Error> {
     init_tracer();
 
+    let pool = PgPool::connect("postgres://letsscience:strong_password@127.0.0.1:5432/letsscience")
+        .await
+        .unwrap();
+
     let app = routes::routes()
         .at("/metrics", PrometheusExporter::new())
+        .data(pool)
         .with(middleware::LogMiddleware);
 
     Server::new(TcpListener::bind("127.0.0.1:3000"))

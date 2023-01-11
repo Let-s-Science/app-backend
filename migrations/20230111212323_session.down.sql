@@ -1,0 +1,1 @@
+drop table poem_sessions;
