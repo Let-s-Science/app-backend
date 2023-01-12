@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Object, Derivative, Serialize, Deserialize)]
+#[derive(Object, Clone, Derivative, Serialize, Deserialize)]
 #[derivative(Debug, Default)]
 pub struct User {
     #[oai(read_only)]

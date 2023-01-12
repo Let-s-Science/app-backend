@@ -25,6 +25,16 @@ impl From<User> for AuthUser {
     }
 }
 
+impl From<Uuid> for AuthUser {
+    fn from(value: Uuid) -> Self {
+        Self {
+            id: value,
+            exp: get_current_timestamp() + 10000,
+            nbf: get_current_timestamp(),
+        }
+    }
+}
+
 #[derive(SecurityScheme, Debug)]
 #[oai(
     type = "api_key",
@@ -43,10 +53,10 @@ pub fn verify_jwt(s: &str) -> jsonwebtoken::errors::Result<AuthUser> {
     decode::<AuthUser>(s, &key, &Validation::default()).map(|token| token.claims)
 }
 
-pub fn create_jwt(user: User) -> jsonwebtoken::errors::Result<String> {
+pub fn create_jwt(id: Uuid) -> jsonwebtoken::errors::Result<String> {
     let header = Header::default();
     let key = EncodingKey::from_secret("secret".as_ref());
-    let claims: AuthUser = user.into();
+    let claims: AuthUser = id.into();
     encode(&header, &claims, &key)
 }
 

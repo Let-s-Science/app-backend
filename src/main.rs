@@ -1,5 +1,11 @@
 use opentelemetry::global;
-use poem::{endpoint::PrometheusExporter, listener::TcpListener, EndpointExt, Server};
+use poem::{
+    endpoint::PrometheusExporter,
+    listener::TcpListener,
+    session::{CookieConfig, CookieSession},
+    web::cookie::CookieKey,
+    EndpointExt, Server,
+};
 use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, Registry};
 
@@ -18,7 +24,7 @@ fn init_tracer() {
         .with_endpoint("http://localhost:14268/api/traces")
         .with_username("username")
         .with_password("s3cr3t")
-        .with_hyper()
+        .with_reqwest()
         .install_batch(opentelemetry::runtime::Tokio)
         .expect("unable to install tracing pipeline");
 
@@ -33,18 +39,25 @@ fn init_tracer() {
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    dotenvy::dotenv().ok();
     init_tracer();
 
-    let pool = PgPool::connect("postgres://letsscience:strong_password@127.0.0.1:5432/letsscience")
-        .await
-        .unwrap();
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL is required");
+
+    let pool = PgPool::connect(&db_url).await.unwrap();
+
+    let secret = std::env::var("SECRET").expect("SECRET is required");
+    let cookie_config =
+        CookieConfig::signed(CookieKey::from(secret.as_bytes())).name("X-SESSION-TOKEN");
+    let session = CookieSession::new(cookie_config);
 
     let app = routes::routes()
         .at("/metrics", PrometheusExporter::new())
         .data(pool)
+        .with(session)
         .with(middleware::LogMiddleware);
 
-    Server::new(TcpListener::bind("127.0.0.1:3000"))
+    Server::new(TcpListener::bind("0.0.0.0:3001"))
         .run(app)
         .await
 }

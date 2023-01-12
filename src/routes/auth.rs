@@ -1,24 +1,24 @@
 use crate::{
     core::{self, user::User},
-    security::JWTAuthorization,
+    security::{create_jwt, JWTAuthorization},
 };
 
 use super::ApiTags;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use derivative::Derivative;
 use password_hash::{rand_core::OsRng, SaltString};
-use poem::{web::Data, Route};
+use poem::{session::Session, web::Data, Route};
 use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi, OpenApiService};
 use sqlx::PgPool;
 use tracing::error;
 use unicode_normalization::UnicodeNormalization;
 use uuid::Uuid;
 
-struct AuthApi;
+pub struct AuthApi;
 
 pub fn routes() -> Route {
     let openapi_service =
-        OpenApiService::new(AuthApi, "Auth API", "0.1").server("http://localhost:3000/api");
+        OpenApiService::new(AuthApi, "Auth API", "0.1").server("http://localhost:3001/api");
     let ui = openapi_service.rapidoc();
     Route::new().nest("/api", openapi_service).nest("/", ui)
 }
@@ -26,8 +26,13 @@ pub fn routes() -> Route {
 #[OpenApi]
 impl AuthApi {
     #[oai(path = "/register", method = "post", tag = "ApiTags::User")]
-    #[tracing::instrument(skip(self, pool))]
-    async fn register(&self, pool: Data<&PgPool>, req: Json<RegisterRequest>) -> RegisterResponse {
+    #[tracing::instrument(skip(self, pool, session))]
+    async fn register(
+        &self,
+        session: &Session,
+        pool: Data<&PgPool>,
+        req: Json<RegisterRequest>,
+    ) -> RegisterResponse {
         let mut user = User {
             name: req.name.clone(),
             is_guest: req.is_guest,
@@ -56,20 +61,55 @@ impl AuthApi {
                 return RegisterResponse::Internal;
             }
         };
+        if create_session(session, db_user).is_err() {
+            return RegisterResponse::Internal;
+        }
         RegisterResponse::Ok(Json(db_user))
     }
 
+    #[oai(path = "/login", method = "post", tag = "ApiTags::User")]
+    #[tracing::instrument(skip(self, pool))]
+    async fn login(&self, pool: Data<&PgPool>, req: Json<LoginRequest>) -> LoginResponse {
+        let db_user = match core::user::get_user_by_email(&pool, &req.email).await {
+            Ok(Some(u)) => u,
+            Ok(None) => return LoginResponse::Unauthorized,
+            Err(e) => {
+                error!("database get user error: {:?}", e);
+                return LoginResponse::Internal;
+            }
+        };
+
+        let Ok(hash) = hash_password(&req.password) else {
+            error!("internal hashing error ");
+            return LoginResponse::Internal;
+        };
+        if let Some(db_hash) = db_user.hash {
+            if hash == db_hash {
+                return LoginResponse::Ok(Json(db_user.id));
+            }
+        }
+        LoginResponse::Unauthorized
+    }
+
     #[oai(path = "/restricted", method = "get", tag = "ApiTags::User")]
-    #[tracing::instrument(skip(self, pool, auth))]
-    async fn restricted(&self, pool: Data<&PgPool>, auth: JWTAuthorization) -> RegisterResponse {
+    #[tracing::instrument(skip(self, _pool, auth))]
+    async fn restricted(&self, _pool: Data<&PgPool>, auth: JWTAuthorization) -> RegisterResponse {
         println!("{:?}", auth);
         RegisterResponse::UserAlreadyExists
     }
 }
 
+fn create_session(session: &Session, user_id: Uuid) -> jsonwebtoken::errors::Result<()> {
+    let jwt = create_jwt(user_id)?;
+
+    session.set("X-SESSION-TOKEN", jwt);
+    Ok(())
+}
+
 #[derive(ApiResponse)]
 pub enum RegisterResponse {
     #[oai(status = 201)]
+    #[oai(header(name = "X-SESSION-TOKEN", type = "String"))]
     Ok(Json<Uuid>),
 
     #[oai(status = 409)]
@@ -80,6 +120,27 @@ pub enum RegisterResponse {
 
     #[oai(status = 500)]
     Internal,
+}
+
+#[derive(ApiResponse)]
+pub enum LoginResponse {
+    #[oai(status = 200)]
+    #[oai(header(name = "X-SESSION-TOKEN", type = "String"))]
+    Ok(Json<Uuid>),
+
+    #[oai(status = 401)]
+    Unauthorized,
+
+    #[oai(status = 500)]
+    Internal,
+}
+
+#[derive(Derivative, Object)]
+#[derivative(Debug)]
+pub struct LoginRequest {
+    email: String,
+    #[derivative(Debug = "ignore")]
+    password: String,
 }
 
 #[derive(Derivative, Object)]

@@ -1,0 +1,238 @@
+{
+  "db": "PostgreSQL",
+  "25fd1080d99f78be2a22c84fcb4d8e4da5e2f9e377dd916c92388ec9f4132f71": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "avatar_seed",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "hash",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_guest",
+          "ordinal": 5,
+          "type_info": "Bool"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 7,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "score",
+          "ordinal": 8,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Bool",
+          "Int4",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            update \"user\"\n            set email = coalesce($1, \"user\".email),\n                name = coalesce($2, \"user\".name),\n                avatar_seed = coalesce($3, \"user\".avatar_seed),\n                hash = coalesce($4, \"user\".hash),\n                is_guest = coalesce($5, \"user\".is_guest),\n                score = coalesce($6, \"user\".score)\n            where id = $7\n            returning *\n        "
+  },
+  "8cc70a8661d36c1ee52c911cdc5288a03ca90a537b9d574cb72be88cfa0b2e38": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "avatar_seed",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "hash",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_guest",
+          "ordinal": 5,
+          "type_info": "Bool"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 7,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "score",
+          "ordinal": 8,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "select * from \"user\" where \"user\".email = $1"
+  },
+  "bdd04934db22e15c34f98ab85f483725ec15eb8a3eb13d2c056b4c05ec64f204": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "avatar_seed",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "hash",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_guest",
+          "ordinal": 5,
+          "type_info": "Bool"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 7,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "score",
+          "ordinal": 8,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "select * from \"user\" where \"user\".id = $1 "
+  },
+  "f202c7679e3e2e9d99f84c5d7d24923b629816750500ce8a3ceaf4c1f1d080a3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Bool"
+        ]
+      }
+    },
+    "query": "insert into \"user\" (id, name, email, avatar_seed, hash, is_guest) values ($1, $2, $3, $4, $5, $6) returning id"
+  }
+}
