@@ -17,4 +17,6 @@ COPY --from=builder /backend/target/release/letsscience-backend ./
 
 EXPOSE 3000
 
+ENV RUST_LOG=debug
+
 CMD ["/backend/letsscience-backend"]

@@ -7,24 +7,17 @@ use super::ApiTags;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use derivative::Derivative;
 use password_hash::{rand_core::OsRng, SaltString};
-use poem::{session::Session, web::Data, Route};
-use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi, OpenApiService};
+use poem::{session::Session, web::Data};
+use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi};
 use sqlx::PgPool;
 use tracing::error;
 use unicode_normalization::UnicodeNormalization;
 use uuid::Uuid;
 
-pub struct AuthApi;
-
-pub fn routes() -> Route {
-    let openapi_service =
-        OpenApiService::new(AuthApi, "Auth API", "0.1").server("http://localhost:3001/api");
-    let ui = openapi_service.rapidoc();
-    Route::new().nest("/api", openapi_service).nest("/", ui)
-}
+pub struct AuthAPI;
 
 #[OpenApi]
-impl AuthApi {
+impl AuthAPI {
     #[oai(path = "/register", method = "post", tag = "ApiTags::User")]
     #[tracing::instrument(skip(self, pool, session))]
     async fn register(

@@ -2,7 +2,7 @@ use chrono::offset::Utc;
 use derivative::Derivative;
 use poem_openapi::Object;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
 #[derive(Object, Clone, Derivative, Serialize, Deserialize)]
@@ -24,8 +24,6 @@ pub struct User {
     pub updated_at: Option<chrono::DateTime<Utc>>,
     pub score: i32,
 }
-
-type Result<T> = sqlx::Result<T>;
 
 // Inserts a new user into the database.
 // Returns Ok(None) if a user with the specified E-Mail adress already exists

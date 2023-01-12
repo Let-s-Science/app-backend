@@ -10,6 +10,7 @@ use sqlx::PgPool;
 use tracing_subscriber::{layer::SubscriberExt, Registry};
 
 pub mod core;
+pub mod entities;
 pub mod middleware;
 pub mod routes;
 pub mod security;
@@ -21,7 +22,7 @@ fn init_tracer() {
     global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
     let tracer = opentelemetry_jaeger::new_collector_pipeline()
         .with_service_name("letsscience")
-        .with_endpoint("http://localhost:14268/api/traces")
+        .with_endpoint("http://0.0.0.0:14268/api/traces")
         .with_username("username")
         .with_password("s3cr3t")
         .with_reqwest()
@@ -29,7 +30,8 @@ fn init_tracer() {
         .expect("unable to install tracing pipeline");
 
     let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-    let subscriber = Registry::default().with(opentelemetry);
+    let fmt = tracing_subscriber::fmt::layer();
+    let subscriber = Registry::default().with(opentelemetry).with(fmt);
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("Unable to set default global subscriber");
@@ -57,7 +59,7 @@ async fn main() -> Result<(), std::io::Error> {
         .with(session)
         .with(middleware::LogMiddleware);
 
-    Server::new(TcpListener::bind("0.0.0.0:3001"))
+    Server::new(TcpListener::bind("127.0.0.1:3000"))
         .run(app)
         .await
 }

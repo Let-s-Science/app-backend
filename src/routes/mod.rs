@@ -7,11 +7,13 @@ pub mod quiz;
 #[derive(Tags)]
 enum ApiTags {
     User,
+    Quiz,
 }
 
 pub fn routes() -> Route {
-    let openapi_service = OpenApiService::new((auth::AuthApi), "Let's Science API", "0.1")
-        .server("http://localhost:3001/api");
+    let openapi_service =
+        OpenApiService::new((auth::AuthAPI, quiz::QuizAPI), "Let's Science API", "0.1")
+            .server("http://localhost:3000/api");
     let ui = openapi_service.rapidoc();
     Route::new().nest("/api", openapi_service).nest("/", ui)
 }
