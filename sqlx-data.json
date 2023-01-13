@@ -74,6 +74,66 @@
     },
     "query": "\n            update \"user\"\n            set email = coalesce($1, \"user\".email),\n                name = coalesce($2, \"user\".name),\n                avatar_seed = coalesce($3, \"user\".avatar_seed),\n                hash = coalesce($4, \"user\".hash),\n                is_guest = coalesce($5, \"user\".is_guest),\n                score = coalesce($6, \"user\".score)\n            where id = $7\n            returning *\n        "
   },
+  "3e305447ce9ca21312990a7f732d9b1ef5757f48d78709b154e1963ca08c53e3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "quiz_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "question",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "data",
+          "ordinal": 3,
+          "type_info": "Json"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            select \n                question.id,\n                question.quiz_id,\n                content question,\n                data\n            from question\n            inner join translation\n            on question.question = translation.id\n            where question.quiz_id = $1\n        "
+  },
+  "4ba57533466a307fbbb17c78a530362d8bd275404470ffd2808b724be9ff1df7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid",
+          "Json"
+        ]
+      }
+    },
+    "query": "insert into \"question\" (quiz_id, question, data) values ($1, $2, $3) returning id"
+  },
   "8cc70a8661d36c1ee52c911cdc5288a03ca90a537b9d574cb72be88cfa0b2e38": {
     "describe": {
       "columns": [
@@ -142,6 +202,27 @@
     },
     "query": "select * from \"user\" where \"user\".email = $1"
   },
+  "8cf0ec1d4bf0d618c635d6ecdc91d4dd0ddb827a7f443f70fda17f6662e61de7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "insert into \"translation\" (language_code, content) values ($1, $2) returning id"
+  },
   "bdd04934db22e15c34f98ab85f483725ec15eb8a3eb13d2c056b4c05ec64f204": {
     "describe": {
       "columns": [
@@ -209,6 +290,65 @@
       }
     },
     "query": "select * from \"user\" where \"user\".id = $1 "
+  },
+  "cc003a6f50e2c502aeda8b06c23c6e6c17c8ddd74e49f10dca9a8a58a6abfb83": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "insert into \"quiz\" (title, created_by) values ($1, $2) returning id"
+  },
+  "d73d86a4082bc2b71c1e78e6ce7b6819fc40e834ba8ca9cff0ea5eba20e33f30": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 2,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "title",
+          "ordinal": 3,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            select\n                quiz.id id,\n                created_at,\n                created_by,\n                content title\n            from quiz quiz\n            inner join translation\n            on quiz.title = translation.id\n            where quiz.id = $1\n        "
   },
   "f202c7679e3e2e9d99f84c5d7d24923b629816750500ce8a3ceaf4c1f1d080a3": {
     "describe": {
