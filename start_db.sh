@@ -1,8 +1,8 @@
 #!/bin/bash
 
-podman network create letsscience-net
+docker network create letsscience-net
 
-podman run -itd \
+docker run -itd \
     --restart always \
     --net letsscience-net \
     -e POSTGRES_USER=letsscience \
