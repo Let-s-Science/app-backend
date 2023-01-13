@@ -49,6 +49,11 @@ async fn main() -> Result<(), std::io::Error> {
 
     let pool = PgPool::connect(&db_url).await.unwrap();
 
+    let port = match std::env::var("PORT") {
+        Ok(port) => port.parse().expect("PORT is not a valid u32"),
+        Err(_) => 3000,
+    };
+
     let secret = std::env::var("SECRET").expect("SECRET is required");
     let cookie_config =
         CookieConfig::signed(CookieKey::from(secret.as_bytes())).name("X-SESSION-TOKEN");
@@ -57,6 +62,7 @@ async fn main() -> Result<(), std::io::Error> {
     let cors = Cors::new()
         .allow_origin("*")
         .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "PATCH"])
+
         .allow_credentials(true);
 
     let app = routes::routes()
@@ -66,7 +72,7 @@ async fn main() -> Result<(), std::io::Error> {
         .with(middleware::LogMiddleware)
         .with(cors);
 
-    Server::new(TcpListener::bind("127.0.0.1:3000"))
+    Server::new(TcpListener::bind(("0.0.0.0", port)))
         .run(app)
         .await
 }
