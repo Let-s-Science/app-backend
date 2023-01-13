@@ -61,7 +61,8 @@ async fn main() -> Result<(), std::io::Error> {
 
     let cors = Cors::new()
         .allow_origin("*")
-        .allow_methods(vec!["GET", "POST", "PUT", "DELETE"])
+        .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "PATCH"])
+
         .allow_credentials(true);
 
     let app = routes::routes()
