@@ -1,4 +1,4 @@
-use opentelemetry::{global, trace::FutureExt};
+use opentelemetry::global;
 use poem::{
     endpoint::PrometheusExporter,
     listener::TcpListener,
