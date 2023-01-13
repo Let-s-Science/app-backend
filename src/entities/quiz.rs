@@ -41,7 +41,7 @@ pub enum QuestionType {
 pub struct DBQuizQuestion {
     pub id: Uuid,
     pub quiz_id: Uuid,
-    pub question: Uuid,
+    pub question: String,
     pub data: sqlx::types::Json<QuestionType>,
 }
 

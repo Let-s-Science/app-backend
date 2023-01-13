@@ -10,7 +10,7 @@ use crate::core::user::User;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthUser {
-    id: Uuid,
+    pub id: Uuid,
     exp: u64,
     nbf: u64,
 }
@@ -42,7 +42,7 @@ impl From<Uuid> for AuthUser {
     in = "cookie",
     checker = "jwt_checker"
 )]
-pub struct JWTAuthorization(AuthUser);
+pub struct JWTAuthorization(pub AuthUser);
 
 async fn jwt_checker(_: &Request, key: ApiKey) -> Option<AuthUser> {
     verify_jwt(&key.key).ok()

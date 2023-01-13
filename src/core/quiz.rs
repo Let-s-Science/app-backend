@@ -24,17 +24,43 @@ pub async fn get_quiz(pool: &PgPool, id: Uuid) -> Result<Option<DBQuiz>> {
     .await? else  {
         return Ok(None);
     };
-    todo!()
+
+    let questions = get_questions_by_quiz_id(pool, row.id).await?;
+    Ok(Some(DBQuiz {
+        id: row.id,
+        title: row.title,
+        created_at: row.created_at,
+        created_by: row.created_by,
+        questions,
+    }))
 }
 
 pub async fn get_questions_by_quiz_id(pool: &PgPool, quiz_id: Uuid) -> Result<Vec<DBQuizQuestion>> {
-    sqlx::query_as!(
-        DBQuizQuestion,
-        r#"select * from question where question.id = $1"#,
+    let row = sqlx::query!(
+        r#"
+            select 
+                question.id,
+                question.quiz_id,
+                content question,
+                data
+            from question
+            inner join translation
+            on question.question = translation.id
+            where question.quiz_id = $1
+        "#,
         quiz_id
     )
-    .fetch_many(pool)
-    .await
+    .fetch_all(pool)
+    .await?;
+    Ok(row
+        .into_iter()
+        .map(|record| DBQuizQuestion {
+            id: record.id,
+            quiz_id: record.quiz_id,
+            question: record.question,
+            data: serde_json::from_value(record.data).expect("Unable to parse json"),
+        })
+        .collect())
 }
 
 #[tracing::instrument(skip(pool))]
@@ -101,11 +127,11 @@ pub async fn insert_translation(
 
 #[cfg(test)]
 mod tests {
-    use sqlx::PgPool;
+    use sqlx::{types::Json, PgPool};
 
     use crate::{
         core::{self, user::User},
-        entities::quiz::DBQuiz,
+        entities::quiz::{DBQuiz, DBQuizQuestion},
     };
 
     #[sqlx::test]
@@ -123,6 +149,22 @@ mod tests {
         let mut quiz = DBQuiz::default();
         quiz.created_by = user_id;
         super::insert_quiz(&pool, &quiz).await?;
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn get_quiz(pool: PgPool) -> sqlx::Result<()> {
+        let user_id = core::user::insert_user(&pool, &User::default())
+            .await?
+            .unwrap();
+        let mut quiz = DBQuiz::default();
+        quiz.created_by = user_id;
+        let quiz_id = super::insert_quiz(&pool, &quiz).await?;
+
+        let db_quiz = super::get_quiz(&pool, quiz_id)
+            .await?
+            .expect("Unable to retrive Quiz from DB");
+        println!("{:?}", db_quiz);
         Ok(())
     }
 }

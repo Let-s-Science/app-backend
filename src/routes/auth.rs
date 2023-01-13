@@ -7,7 +7,13 @@ use super::ApiTags;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use derivative::Derivative;
 use password_hash::{rand_core::OsRng, SaltString};
-use poem::{session::Session, web::Data};
+use poem::{
+    session::Session,
+    web::{
+        cookie::{Cookie, CookieJar},
+        Data,
+    },
+};
 use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi};
 use sqlx::PgPool;
 use tracing::error;
@@ -19,10 +25,10 @@ pub struct AuthAPI;
 #[OpenApi]
 impl AuthAPI {
     #[oai(path = "/register", method = "post", tag = "ApiTags::User")]
-    #[tracing::instrument(skip(self, pool, session))]
+    #[tracing::instrument(skip(self, pool, jar))]
     async fn register(
         &self,
-        session: &Session,
+        jar: &CookieJar,
         pool: Data<&PgPool>,
         req: Json<RegisterRequest>,
     ) -> RegisterResponse {
@@ -54,7 +60,7 @@ impl AuthAPI {
                 return RegisterResponse::Internal;
             }
         };
-        if create_session(session, db_user).is_err() {
+        if create_session(jar, db_user).is_err() {
             return RegisterResponse::Internal;
         }
         RegisterResponse::Ok(Json(db_user))
@@ -92,10 +98,10 @@ impl AuthAPI {
     }
 }
 
-fn create_session(session: &Session, user_id: Uuid) -> jsonwebtoken::errors::Result<()> {
+fn create_session(jar: &CookieJar, user_id: Uuid) -> jsonwebtoken::errors::Result<()> {
     let jwt = create_jwt(user_id)?;
-
-    session.set("X-SESSION-TOKEN", jwt);
+    let cookie = Cookie::new("X-SESSION-TOKEN", jwt);
+    jar.add(cookie);
     Ok(())
 }
 

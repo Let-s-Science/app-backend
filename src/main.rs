@@ -2,6 +2,7 @@ use opentelemetry::global;
 use poem::{
     endpoint::PrometheusExporter,
     listener::TcpListener,
+    middleware::Cors,
     session::{CookieConfig, CookieSession},
     web::cookie::CookieKey,
     EndpointExt, Server,
@@ -57,6 +58,7 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/metrics", PrometheusExporter::new())
         .data(pool)
         .with(session)
+        .with(Cors::new().allow_origin("*"))
         .with(middleware::LogMiddleware);
 
     Server::new(TcpListener::bind("127.0.0.1:3000"))
