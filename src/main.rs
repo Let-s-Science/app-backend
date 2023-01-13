@@ -7,7 +7,7 @@ use poem::{
     web::cookie::CookieKey,
     EndpointExt, Server,
 };
-use sqlx::PgPool;
+use sqlx::{Migrator, PgPool};
 use tracing_subscriber::{layer::SubscriberExt, Registry};
 
 pub mod core;
@@ -38,7 +38,7 @@ fn init_tracer() {
         .expect("Unable to set default global subscriber");
 }
 
-// TODO: Init migrations
+static MIGRATOR: Migrator = sqlx::migrate!();
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -62,7 +62,6 @@ async fn main() -> Result<(), std::io::Error> {
     let cors = Cors::new()
         .allow_origin("*")
         .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "PATCH"])
-
         .allow_credentials(true);
 
     let app = routes::routes()

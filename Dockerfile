@@ -15,8 +15,6 @@ WORKDIR /backend
 # Copy our build
 COPY --from=builder /backend/target/release/letsscience-backend ./
 
-EXPOSE 3000
-
-ENV RUST_LOG=debug
+ENV RUST_LOG=trace
 
 CMD ["/backend/letsscience-backend"]
