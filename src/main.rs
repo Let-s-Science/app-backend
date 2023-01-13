@@ -59,12 +59,17 @@ async fn main() -> Result<(), std::io::Error> {
         CookieConfig::signed(CookieKey::from(secret.as_bytes())).name("X-SESSION-TOKEN");
     let session = CookieSession::new(cookie_config);
 
+    let cors = Cors::new()
+        .allow_origin("*")
+        .allow_methods(vec!["GET", "POST", "PUT", "DELETE"])
+        .allow_credentials(true);
+
     let app = routes::routes()
         .at("/metrics", PrometheusExporter::new())
         .data(pool)
         .with(session)
-        .with(Cors::new().allow_origin("*"))
-        .with(middleware::LogMiddleware);
+        .with(middleware::LogMiddleware)
+        .with(cors);
 
     Server::new(TcpListener::bind(("0.0.0.0", port)))
         .run(app)
