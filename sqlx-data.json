@@ -1,5 +1,53 @@
 {
   "db": "PostgreSQL",
+  "081ca0e58cc35268022d8ecb229c4e48ea02641a5164261aa5bda3cbaeb09ace": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "type: ChallengeType",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "dailychallenge",
+                  "counter"
+                ]
+              },
+              "name": "challengetype"
+            }
+          }
+        },
+        {
+          "name": "goal",
+          "ordinal": 2,
+          "type_info": "Int4"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            select\n                challenge.id id,\n                type as \"type: ChallengeType\",\n                goal,\n                content description\n            from challenge challenge\n            inner join translation\n            on challenge.description = translation.id\n            where challenge.id = $1\n        "
+  },
   "25fd1080d99f78be2a22c84fcb4d8e4da5e2f9e377dd916c92388ec9f4132f71": {
     "describe": {
       "columns": [
@@ -133,6 +181,38 @@
       }
     },
     "query": "insert into \"question\" (quiz_id, question, data) values ($1, $2, $3) returning id"
+  },
+  "73d7ccb09299d74e391b149eeb60fe6667d94d1fe14e71ab8e8dbf77cdb4a16a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "dailychallenge",
+                  "counter"
+                ]
+              },
+              "name": "challengetype"
+            }
+          },
+          "Int4",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n        insert into \"challenge\" (type, goal, description) values ($1, $2, $3)\n        returning id"
   },
   "8cc70a8661d36c1ee52c911cdc5288a03ca90a537b9d574cb72be88cfa0b2e38": {
     "describe": {
