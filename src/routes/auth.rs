@@ -1,18 +1,15 @@
 use crate::{
     core::{self, user::User},
-    security::{create_jwt, JWTAuthorization},
+    security::create_jwt,
 };
 
 use super::ApiTags;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use derivative::Derivative;
 use password_hash::{rand_core::OsRng, SaltString};
-use poem::{
-    session::Session,
-    web::{
-        cookie::{Cookie, CookieJar},
-        Data,
-    },
+use poem::web::{
+    cookie::{Cookie, CookieJar},
+    Data,
 };
 use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi};
 use sqlx::PgPool;
@@ -67,34 +64,35 @@ impl AuthAPI {
     }
 
     #[oai(path = "/login", method = "post", tag = "ApiTags::User")]
-    #[tracing::instrument(skip(self, pool))]
-    async fn login(&self, pool: Data<&PgPool>, req: Json<LoginRequest>) -> LoginResponse {
+    #[tracing::instrument(skip(self, jar, pool))]
+    async fn login(
+        &self,
+        jar: &CookieJar,
+        pool: Data<&PgPool>,
+        req: Json<LoginRequest>,
+    ) -> LoginResponse {
         let db_user = match core::user::get_user_by_email(&pool, &req.email).await {
             Ok(Some(u)) => u,
-            Ok(None) => return LoginResponse::Unauthorized,
+            Ok(None) => {
+                return LoginResponse::Unauthorized;
+            }
             Err(e) => {
                 error!("database get user error: {:?}", e);
                 return LoginResponse::Internal;
             }
         };
 
-        let Ok(hash) = hash_password(&req.password) else {
-            error!("internal hashing error ");
+        if create_session(jar, db_user.id).is_err() {
             return LoginResponse::Internal;
-        };
+        }
+
         if let Some(db_hash) = db_user.hash {
-            if hash == db_hash {
+            if matches!(verify_password(&req.password, &db_hash), Ok(true)) {
                 return LoginResponse::Ok(Json(db_user.id));
             }
         }
-        LoginResponse::Unauthorized
-    }
 
-    #[oai(path = "/restricted", method = "get", tag = "ApiTags::User")]
-    #[tracing::instrument(skip(self, _pool, auth))]
-    async fn restricted(&self, _pool: Data<&PgPool>, auth: JWTAuthorization) -> RegisterResponse {
-        println!("{:?}", auth);
-        RegisterResponse::UserAlreadyExists
+        LoginResponse::Unauthorized
     }
 }
 
