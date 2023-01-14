@@ -7,7 +7,7 @@ use poem::{
     web::cookie::CookieKey,
     EndpointExt, Server,
 };
-use sqlx::{Migrator, PgPool};
+use sqlx::{migrate::Migrator, PgPool};
 use tracing_subscriber::{layer::SubscriberExt, Registry};
 
 pub mod core;

@@ -2,12 +2,14 @@ use poem::Route;
 use poem_openapi::{OpenApiService, Tags};
 
 pub mod auth;
+pub mod challenge;
 pub mod quiz;
 
 #[derive(Tags)]
 enum ApiTags {
     User,
     Quiz,
+    Challenge,
 }
 
 pub fn routes() -> Route {
