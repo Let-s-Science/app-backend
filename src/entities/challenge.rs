@@ -19,6 +19,7 @@ impl Default for ChallengeType {
 
 #[derive(Object, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Challenge {
+    #[oai(read_only)]
     pub id: Uuid,
     pub r#type: ChallengeType,
     pub goal: i32,

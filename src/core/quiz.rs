@@ -164,7 +164,8 @@ mod tests {
         let db_quiz = super::get_quiz(&pool, quiz_id)
             .await?
             .expect("Unable to retrive Quiz from DB");
-        println!("{:?}", db_quiz);
+        assert_eq!(db_quiz.title, quiz.title);
+        assert_eq!(db_quiz.created_by, user_id);
         Ok(())
     }
 }
