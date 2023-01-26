@@ -46,7 +46,7 @@ pub struct JWTAuthorization(pub AuthUser);
 
 async fn jwt_checker(_: &Request, key: ApiKey) -> Option<AuthUser> {
     // For some reason, JWT's get a %22 prefix
-    verify_jwt(&key.key.trim_matches('"')).ok()
+    verify_jwt(key.key.trim_matches('"')).ok()
 }
 
 pub fn verify_jwt(s: &str) -> jsonwebtoken::errors::Result<AuthUser> {

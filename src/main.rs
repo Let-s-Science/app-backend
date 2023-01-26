@@ -49,6 +49,8 @@ async fn main() -> Result<(), std::io::Error> {
 
     let pool = PgPool::connect(&db_url).await.unwrap();
 
+    MIGRATOR.run(&pool).await.expect("Unable to run migrations");
+
     let port = match std::env::var("PORT") {
         Ok(port) => port.parse().expect("PORT is not a valid u32"),
         Err(_) => 3000,

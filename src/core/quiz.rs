@@ -88,7 +88,7 @@ pub async fn insert_quiz(pool: &PgPool, quiz: &DBQuiz) -> Result<Uuid> {
             quiz_id,
             ..question.clone()
         };
-        insert_question(pool, question.clone())
+        insert_question(pool, question)
     });
     future::join_all(fut_vec).await;
 
@@ -115,7 +115,7 @@ pub async fn insert_translation(
     content: &str,
     language_code: Option<String>,
 ) -> Result<Uuid> {
-    let language_code = language_code.unwrap_or("en-GB".to_owned());
+    let language_code = language_code.unwrap_or_else(|| "en-GB".to_owned());
     sqlx::query_scalar!(
         r#"insert into "translation" (language_code, content) values ($1, $2) returning id"#,
         language_code,
