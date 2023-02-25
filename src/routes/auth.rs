@@ -1,16 +1,13 @@
 use crate::{
     core::{self, user::User},
-    security::create_jwt,
+    security::{create_jwt, JWTAuthorization},
 };
 
 use super::ApiTags;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use derivative::Derivative;
 use password_hash::{rand_core::OsRng, SaltString};
-use poem::web::{
-    cookie::{Cookie, CookieJar},
-    Data,
-};
+use poem::web::{cookie::CookieJar, Data};
 use poem_openapi::{payload::Json, ApiResponse, Object, OpenApi};
 use sqlx::PgPool;
 use tracing::error;
@@ -19,7 +16,7 @@ use uuid::Uuid;
 
 pub struct AuthAPI;
 
-#[OpenApi]
+#[OpenApi(prefix_path = "/api")]
 impl AuthAPI {
     #[oai(path = "/register", method = "post", tag = "ApiTags::User")]
     #[tracing::instrument(skip(self, pool, jar))]
@@ -57,10 +54,10 @@ impl AuthAPI {
                 return RegisterResponse::Internal;
             }
         };
-        if create_session(jar, db_user).is_err() {
+        let Ok(jwt) = create_jwt(db_user) else {
             return RegisterResponse::Internal;
-        }
-        RegisterResponse::Ok(Json(db_user))
+        };
+        RegisterResponse::Ok(Json(jwt))
     }
 
     #[oai(path = "/login", method = "post", tag = "ApiTags::User")]
@@ -82,32 +79,37 @@ impl AuthAPI {
             }
         };
 
-        if create_session(jar, db_user.id).is_err() {
+        let Ok(jwt) = create_jwt(db_user.id) else {
             return LoginResponse::Internal;
-        }
+        };
 
         if let Some(db_hash) = db_user.hash {
             if matches!(verify_password(&req.password, &db_hash), Ok(true)) {
-                return LoginResponse::Ok(Json(db_user.id));
+                return LoginResponse::Ok(Json(jwt));
             }
         }
 
         LoginResponse::Unauthorized
     }
-}
 
-fn create_session(jar: &CookieJar, user_id: Uuid) -> jsonwebtoken::errors::Result<()> {
-    let jwt = create_jwt(user_id)?;
-    let cookie = Cookie::new("X-SESSION-TOKEN", jwt);
-    jar.add(cookie);
-    Ok(())
+    #[oai(path = "/user/self", method = "get", tag = "ApiTags::User")]
+    #[tracing::instrument(skip(self, pool))]
+    async fn get_user(&self, pool: Data<&PgPool>, auth: JWTAuthorization) -> GetUserResponse {
+        match core::user::get_user(&pool, auth.0.id).await {
+            Ok(Some(u)) => GetUserResponse::Ok(Json(u)),
+            Ok(None) => GetUserResponse::NotFound,
+            Err(e) => {
+                error!("error {:?} while retrieving profile {:?}", e, auth.0);
+                GetUserResponse::Internal
+            }
+        }
+    }
 }
 
 #[derive(ApiResponse)]
 pub enum RegisterResponse {
     #[oai(status = 201)]
-    #[oai(header(name = "X-SESSION-TOKEN", type = "String"))]
-    Ok(Json<Uuid>),
+    Ok(Json<String>),
 
     #[oai(status = 409)]
     UserAlreadyExists,
@@ -122,8 +124,7 @@ pub enum RegisterResponse {
 #[derive(ApiResponse)]
 pub enum LoginResponse {
     #[oai(status = 200)]
-    #[oai(header(name = "X-SESSION-TOKEN", type = "String"))]
-    Ok(Json<Uuid>),
+    Ok(Json<String>),
 
     #[oai(status = 401)]
     Unauthorized,
@@ -149,6 +150,18 @@ pub struct RegisterRequest {
     password: Option<String>,
     avatar_seed: String,
     is_guest: bool,
+}
+
+#[derive(ApiResponse)]
+pub enum GetUserResponse {
+    #[oai(status = 200)]
+    Ok(Json<User>),
+
+    #[oai(status = 404)]
+    NotFound,
+
+    #[oai(status = 500)]
+    Internal,
 }
 
 fn normalize(pass: &str) -> String {

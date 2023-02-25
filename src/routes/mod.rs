@@ -20,5 +20,7 @@ pub fn routes() -> Route {
     )
     .server("http://localhost:3000/api");
     let ui = openapi_service.redoc();
-    Route::new().nest("/api", openapi_service).nest("/", ui)
+    Route::new()
+        .nest_no_strip("/api", openapi_service)
+        .nest("/", ui)
 }

@@ -5,8 +5,8 @@ use crate::{
 };
 
 use super::ApiTags;
-use poem::web::{Data, Path, Query};
-use poem_openapi::{payload::Json, ApiResponse, OpenApi};
+use poem::web::{Data, Query};
+use poem_openapi::{param::Path, payload::Json, ApiResponse, OpenApi};
 use serde::Deserialize;
 use sqlx::PgPool;
 use tracing::error;
@@ -16,7 +16,7 @@ pub struct QuizAPI;
 
 #[OpenApi]
 impl QuizAPI {
-    #[oai(path = "/quiz", method = "post", tag = "ApiTags::Quiz")]
+    #[oai(path = "/api/quiz", method = "post", tag = "ApiTags::Quiz")]
     #[tracing::instrument(skip(self, pool, auth))]
     async fn create_quiz(
         &self,
@@ -36,16 +36,16 @@ impl QuizAPI {
         CreateQuizResponse::Ok(Json(id))
     }
 
-    #[oai(path = "/quiz/:id", method = "get", tag = "ApiTags::Quiz")]
-    #[tracing::instrument(skip(self, pool, auth))]
+    #[oai(path = "/api/quiz/:id", method = "get", tag = "ApiTags::Quiz")]
+    #[tracing::instrument(skip(self, pool, id, auth))]
     async fn get_quiz(
         &self,
         pool: Data<&PgPool>,
-        quiz_id: Path<Uuid>,
+        id: Path<Uuid>,
         locale_query: Query<LocaleQuery>,
         auth: JWTAuthorization,
     ) -> GetQuizResponse {
-        let quiz = match core::quiz::get_quiz(&pool, quiz_id.0).await {
+        let quiz = match core::quiz::get_quiz(&pool, id.0).await {
             Ok(Some(q)) => q,
             Ok(None) => return GetQuizResponse::NotFound,
             Err(e) => {
@@ -64,7 +64,7 @@ pub struct LocaleQuery {
 
 #[derive(ApiResponse)]
 pub enum GetQuizResponse {
-    #[oai(status = 201)]
+    #[oai(status = 200)]
     Ok(Json<APIQuiz>),
 
     #[oai(status = 404)]

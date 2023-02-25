@@ -22,6 +22,7 @@ pub async fn get_quiz(pool: &PgPool, id: Uuid) -> Result<Option<DBQuiz>> {
     )
     .fetch_optional(pool)
     .await? else  {
+        println!("Heeeeeeeeey");
         return Ok(None);
     };
 
@@ -127,11 +128,11 @@ pub async fn insert_translation(
 
 #[cfg(test)]
 mod tests {
-    use sqlx::{types::Json, PgPool};
+    use sqlx::PgPool;
 
     use crate::{
         core::{self, user::User},
-        entities::quiz::{DBQuiz, DBQuizQuestion},
+        entities::quiz::DBQuiz,
     };
 
     #[sqlx::test]

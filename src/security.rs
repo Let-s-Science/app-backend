@@ -39,7 +39,7 @@ impl From<Uuid> for AuthUser {
 #[oai(
     type = "api_key",
     key_name = "X-SESSION-TOKEN",
-    in = "cookie",
+    in = "header",
     checker = "jwt_checker"
 )]
 pub struct JWTAuthorization(pub AuthUser);

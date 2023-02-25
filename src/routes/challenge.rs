@@ -1,10 +1,18 @@
 use poem::web::Data;
-use poem_openapi::{param::Path, payload::Json, ApiResponse, OpenApi};
+use poem_openapi::{
+    param::{Path, Query},
+    payload::Json,
+    ApiResponse, Object, OpenApi,
+};
 use sqlx::PgPool;
 use tracing::error;
 use uuid::Uuid;
 
-use crate::{core, entities::challenge::Challenge, security::JWTAuthorization};
+use crate::{
+    core,
+    entities::challenge::{Challenge, UserChallenge},
+    security::JWTAuthorization,
+};
 
 use super::ApiTags;
 
@@ -12,7 +20,7 @@ pub struct ChallengeAPI;
 
 #[OpenApi]
 impl ChallengeAPI {
-    #[oai(path = "/challenge", method = "post", tag = "ApiTags::Challenge")]
+    #[oai(path = "/api/challenge", method = "post", tag = "ApiTags::Challenge")]
     #[tracing::instrument(skip(self, pool, auth))]
     async fn create_challenge(
         &self,
@@ -29,7 +37,11 @@ impl ChallengeAPI {
         }
     }
 
-    #[oai(path = "/challenge/:id", method = "get", tag = "ApiTags::Challenge")]
+    #[oai(
+        path = "/api/challenge/:id",
+        method = "get",
+        tag = "ApiTags::Challenge"
+    )]
     #[tracing::instrument(skip(self, pool, id, auth))]
     async fn get_challenge(
         &self,
@@ -43,6 +55,66 @@ impl ChallengeAPI {
             Err(e) => {
                 error!("error while getting challenge: {:?}", e);
                 GetChallengeResponse::Internal
+            }
+        }
+    }
+
+    #[oai(
+        path = "/api/challenge/:id/progress",
+        method = "post",
+        tag = "ApiTags::Challenge"
+    )]
+    #[tracing::instrument(skip(self, pool, id, auth))]
+    async fn add_progress(
+        &self,
+        pool: Data<&PgPool>,
+        id: Path<Uuid>,
+        auth: JWTAuthorization,
+        req: Json<AddProgressRequest>,
+    ) -> AddProgressResponse {
+        match core::challenge::add_progress(&pool, auth.0.id, id.0, req.progress).await {
+            Ok(Some(ch)) => AddProgressResponse::Ok(Json(ch)),
+            Ok(None) => AddProgressResponse::NotFound,
+            Err(e) => {
+                error!(
+                    "error {:?} while adding progress {:?} to challenge {:?}",
+                    e, req.progress, id.0
+                );
+                AddProgressResponse::Internal
+            }
+        }
+    }
+
+    #[oai(
+        path = "/api/challenges/self",
+        method = "get",
+        tag = "ApiTags::Challenge"
+    )]
+    async fn get_user_challenges(
+        &self,
+        pool: Data<&PgPool>,
+        challenge_id: Query<Option<Uuid>>,
+        auth: JWTAuthorization,
+    ) -> GetUserChallengesResponse {
+        match core::challenge::get_user_challenges(&pool, auth.0.id, challenge_id.0).await {
+            Ok(resp) => GetUserChallengesResponse::Ok(Json(resp)),
+            Err(e) => {
+                error!(
+                    "error {:?} while retrieving challenges for user {:?}",
+                    e, auth.0.id
+                );
+                GetUserChallengesResponse::Internal
+            }
+        }
+    }
+
+    #[oai(path = "/api/challenges", method = "get", tag = "ApiTags::Challenge")]
+    async fn get_challenges(&self, pool: Data<&PgPool>) -> GetChallengesResponse {
+        match core::challenge::get_challenges(&pool).await {
+            Ok(resp) => GetChallengesResponse::Ok(Json(resp)),
+            Err(e) => {
+                error!("error {:?} while retrieving challenges", e);
+                GetChallengesResponse::Internal
             }
         }
     }
@@ -67,4 +139,39 @@ pub enum GetChallengeResponse {
 
     #[oai(status = 404)]
     NotFound,
+}
+
+#[derive(Object, Debug)]
+pub struct AddProgressRequest {
+    progress: i32,
+}
+
+#[derive(ApiResponse, Debug)]
+pub enum AddProgressResponse {
+    #[oai(status = 200)]
+    Ok(Json<UserChallenge>),
+
+    #[oai(status = 500)]
+    Internal,
+
+    #[oai(status = 404)]
+    NotFound,
+}
+
+#[derive(ApiResponse)]
+pub enum GetUserChallengesResponse {
+    #[oai(status = 200)]
+    Ok(Json<Vec<UserChallenge>>),
+
+    #[oai(status = 500)]
+    Internal,
+}
+
+#[derive(ApiResponse)]
+pub enum GetChallengesResponse {
+    #[oai(status = 200)]
+    Ok(Json<Vec<Challenge>>),
+
+    #[oai(status = 500)]
+    Internal,
 }

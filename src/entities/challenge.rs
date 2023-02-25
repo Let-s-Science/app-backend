@@ -21,6 +21,8 @@ impl Default for ChallengeType {
 pub struct Challenge {
     #[oai(read_only)]
     pub id: Uuid,
+    pub title: String,
+    pub category: String,
     pub r#type: ChallengeType,
     pub goal: i32,
     pub description: String,
@@ -28,8 +30,8 @@ pub struct Challenge {
 
 #[derive(Object, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UserChallenge {
-    pub id: Uuid,
+    pub user_id: Uuid,
     pub challenge_id: Uuid,
     pub progress: i32,
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
 }

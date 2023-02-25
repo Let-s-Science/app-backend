@@ -1,0 +1,1 @@
+alter table "user_challenge" drop constraint one_user_per_challenge;

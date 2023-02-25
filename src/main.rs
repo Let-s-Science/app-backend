@@ -62,7 +62,7 @@ async fn main() -> Result<(), std::io::Error> {
     let session = CookieSession::new(cookie_config);
 
     let cors = Cors::new()
-        .allow_origin("*")
+        .allow_origins_fn(|_| true)
         .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "PATCH"])
         .allow_credentials(true);
 
