@@ -19,7 +19,7 @@ impl From<User> for AuthUser {
     fn from(value: User) -> Self {
         Self {
             id: value.id,
-            exp: get_current_timestamp() + 10000,
+            exp: get_current_timestamp() + 100000000,
             nbf: get_current_timestamp(),
         }
     }
@@ -29,7 +29,7 @@ impl From<Uuid> for AuthUser {
     fn from(value: Uuid) -> Self {
         Self {
             id: value,
-            exp: get_current_timestamp() + 10000,
+            exp: get_current_timestamp() + 100000000,
             nbf: get_current_timestamp(),
         }
     }

@@ -130,6 +130,26 @@ pub async fn get_challenges(pool: &PgPool) -> Result<Vec<Challenge>> {
     .collect())
 }
 
+#[tracing::instrument]
+pub async fn delete_progress(
+    pool: &PgPool,
+    user_id: Uuid,
+    challenge_id: Uuid,
+) -> Result<Option<UserChallenge>> {
+    sqlx::query_as!(
+        UserChallenge,
+        r#"
+            delete from user_challenge
+            where user_id = $1 and challenge_id = $2
+            returning *
+        "#,
+        user_id,
+        challenge_id
+    )
+    .fetch_optional(pool)
+    .await
+}
+
 #[cfg(test)]
 mod tests {
 

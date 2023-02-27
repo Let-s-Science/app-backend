@@ -118,6 +118,31 @@ impl ChallengeAPI {
             }
         }
     }
+
+    #[oai(
+        path = "/api/challenge/:id/progress",
+        method = "delete",
+        tag = "ApiTags::Challenge"
+    )]
+    #[tracing::instrument(skip(self, pool, id, auth))]
+    async fn delete_progress(
+        &self,
+        pool: Data<&PgPool>,
+        id: Path<Uuid>,
+        auth: JWTAuthorization,
+    ) -> DeleteProgressResponse {
+        match core::challenge::delete_progress(&pool, auth.0.id, id.0).await {
+            Ok(Some(_)) => DeleteProgressResponse::Ok,
+            Ok(None) => DeleteProgressResponse::NotFound,
+            Err(e) => {
+                error!(
+                    "error {:?} while removing progress from challenge {:?}",
+                    e, id.0
+                );
+                DeleteProgressResponse::Internal
+            }
+        }
+    }
 }
 
 #[derive(ApiResponse, Debug)]
@@ -171,6 +196,18 @@ pub enum GetUserChallengesResponse {
 pub enum GetChallengesResponse {
     #[oai(status = 200)]
     Ok(Json<Vec<Challenge>>),
+
+    #[oai(status = 500)]
+    Internal,
+}
+
+#[derive(ApiResponse)]
+pub enum DeleteProgressResponse {
+    #[oai(status = 200)]
+    Ok,
+
+    #[oai(status = 404)]
+    NotFound,
 
     #[oai(status = 500)]
     Internal,

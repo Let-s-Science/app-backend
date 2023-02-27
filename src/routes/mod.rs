@@ -1,4 +1,4 @@
-use poem::Route;
+use poem::{endpoint::StaticFilesEndpoint, Route};
 use poem_openapi::{OpenApiService, Tags};
 
 pub mod auth;
@@ -19,8 +19,10 @@ pub fn routes() -> Route {
         "0.1",
     )
     .server("http://localhost:3000/api");
-    let ui = openapi_service.redoc();
+    let docs = openapi_service.redoc();
+    let files = StaticFilesEndpoint::new("./dist").index_file("index.html");
     Route::new()
         .nest_no_strip("/api", openapi_service)
-        .nest("/", ui)
+        .nest("/docs", docs)
+        .nest("/", files)
 }

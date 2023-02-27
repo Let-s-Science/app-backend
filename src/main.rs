@@ -41,7 +41,7 @@ fn init_tracer() {
 static MIGRATOR: Migrator = sqlx::migrate!();
 
 #[tokio::main]
-async fn main() -> Result<(), std::io::Error> {
+async fn main() {
     dotenvy::dotenv().ok();
     init_tracer();
 
@@ -57,6 +57,13 @@ async fn main() -> Result<(), std::io::Error> {
     };
 
     let secret = std::env::var("SECRET").expect("SECRET is required");
+
+    // let secret = if let Some(secret) = secret_store.get("secret") {
+    //     secret
+    // } else {
+    //     return Err(anyhow!("secret was not found").into());
+    // };
+
     let cookie_config =
         CookieConfig::signed(CookieKey::from(secret.as_bytes())).name("X-SESSION-TOKEN");
     let session = CookieSession::new(cookie_config);
@@ -75,5 +82,5 @@ async fn main() -> Result<(), std::io::Error> {
 
     Server::new(TcpListener::bind(("0.0.0.0", port)))
         .run(app)
-        .await
+        .await;
 }
